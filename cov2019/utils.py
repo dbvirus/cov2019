@@ -24,6 +24,9 @@ def srr_to_url(srr):
     
     >>> srr_to_url("042301")
     'https://sra-download.st-va.ncbi.nlm.nih.gov/sos2/sra-pub-run-6/SRR042301/SRR042301.3'
+
+    >>> srr_to_url("SRR327703")
+    'https://sra-download.st-va.ncbi.nlm.nih.gov/sos2/sra-pub-run-3/SRR327703/SRR327703.3'
     """
 
     srr = srr.upper()
@@ -58,8 +61,20 @@ def srr_to_url(srr):
     # The result has a very complicated nested structure.
     # Here we try to access the target data.
     try:
-        run = data["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]["RUN_SET"]["RUN"]
+        runs = data["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]["RUN_SET"]["RUN"]
+
+        # It is possible that we are dealing with a list of runs
+        if isinstance(runs, list):
+            # If so, there is only one accession # that matches the target SRR
+            accessions = [r["@accession"] for r in runs]
+            run_id = accessions.index(srr)
+            run = runs[run_id]
+        else:
+            # If not, there's a single run
+            run = runs
+        
         sra_file = run["SRAFiles"]["SRAFile"]
+
         url = sra_file["@url"]
     except KeyError as e:
         logging.error(f"Failed to acquire link for SRR {srr}")
