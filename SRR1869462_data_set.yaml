@@ -1,0 +1,13 @@
+
+[
+    {
+        orientation: "fr",
+        type: "paired-end",
+        right reads: [
+            "sra-pub-run-2/SRR1869462/SRR1869462.1_1.fastq"
+        ],
+        left reads: [
+            "sra-pub-run-2/SRR1869462/SRR1869462.1_2.fastq" 
+        ]
+    }
+]

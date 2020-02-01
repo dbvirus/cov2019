@@ -1,0 +1,10 @@
+channels:
+    - conda-forge
+    - bioconda
+  
+dependencies:
+    - bwa =0.7.17
+    - bedtools =2.29
+    - samtools =1.9
+    - sra-tools =2.10.1
+  
