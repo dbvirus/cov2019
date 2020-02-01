@@ -145,3 +145,5 @@ data/*
 *.fastq
 index*
 .snakemake
+sra-download*
+teste
