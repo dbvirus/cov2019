@@ -1,10 +1,10 @@
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-
+from cov2019.utils import srr_to_url
 HTTP = HTTPRemoteProvider()
 
 genomes=config['genomes']
 samples_file=config['samples']
-threads=10
+threads=9
 samples=list()
 
 with open(samples_file) as fin:
@@ -13,28 +13,30 @@ with open(samples_file) as fin:
 #print(samples)
 
 def get_reads(wildcards):
-    
-    return HTTP.remote("https://sra-download.st-va.ncbi.nlm.nih.gov/sos2/sra-pub-run-6/SRR1869462/SRR1869462.1", keep_local=True)
+    link=srr_to_url(wildcards.sample)
+    return HTTP.remote(link)
 
 rule all:
     input:
         #expand("{sample}.fasta", sample=samples)
         #expand("{sample}.1_{pair}.fastq", sample=samples, pair=[1,2])
-        expand("montagens/{sample}.fa", sample='SRR1869462')
+        expand("montagens/{sample}.fa", sample=samples)
 
 
 rule fastq_dump:
     input:
         reads=get_reads
+    params:
+        sra="data/{sample}"
     output:
-        "data/{sample}.1_1.fastq",
-        "data/{sample}.1_2.fastq"
+        "data/{sample}_1.fastq",
+        "data/{sample}_2.fastq"
     conda:
         "envs/filter.yaml"
     log:
-
+        "fastq-dump_{sample}.log"
     shell:
-        "cd data/;fastq-dump --split-files {input.reads}"
+        "mv {input.reads} {params.sra};fastq-dump -O data --split-files {params.sra}"
 
 rule build_index:
     input:
@@ -46,12 +48,12 @@ rule build_index:
     log:
         "logs/index.log"
     shell:
-        "mkdir ref;touch ref/index;bwa index -p {output} {input.genomes}"
+        "bwa index -p {output} {input.genomes}; touch ref/index"
 
 rule filter_virus_reads:
     input:
-        read1="data/{sample}.1_1.fastq",
-        read2="data/{sample}.1_2.fastq",
+        read1="data/{sample}_1.fastq",
+        read2="data/{sample}_2.fastq",
         index="ref/index"
     output:
         "data/{sample}_1.fq",
@@ -63,7 +65,7 @@ rule filter_virus_reads:
     threads: threads
     shell:
         "bwa mem -t {threads} {input.index} {input.read1} {input.read2} | "
-        "samtools view -bS -F 4 - | "
+        "samtools view -bS -f 2 - | "
         "bamToFastq -i /dev/stdin -fq {output[0]} -fq2 {output[1]}"
 
 rule assembly_virus:
@@ -78,5 +80,4 @@ rule assembly_virus:
         "logs/assembly_{sample}.log"
     threads:threads
     shell:
-        "spades.py -1 {input[0]} -2 {input[1]} --careful  -o {output}"
-
+        "spades.py -t {threads} -1 {input[0]} -2 {input[1]} --careful  -o {output}"
