@@ -20,42 +20,42 @@ rule all:
     input:
         #expand("{sample}.fasta", sample=samples)
         #expand("{sample}.1_{pair}.fastq", sample=samples, pair=[1,2])
-        expand("{sample}.fa", sample='SRR1869462')
+        expand("montagens/{sample}.fa", sample='SRR1869462')
 
 
 rule fastq_dump:
     input:
         reads=get_reads
     output:
-        "{sample}.1_1.fastq",
-        "{sample}.1_2.fastq"
+        "data/{sample}.1_1.fastq",
+        "data/{sample}.1_2.fastq"
     conda:
         "envs/filter.yaml"
     log:
 
     shell:
-        "fastq-dump --split-files {input.reads}"
+        "cd data/;fastq-dump --split-files {input.reads}"
 
 rule build_index:
     input:
         genomes=genomes
     output:
-        "index"
+        "ref/index"
     conda:
         "envs/filter.yaml"
     log:
         "logs/index.log"
     shell:
-        "touch index;bwa index -p {output} {input.genomes}"
+        "mkdir ref;touch ref/index;bwa index -p {output} {input.genomes}"
 
 rule filter_virus_reads:
     input:
-        read1="{sample}.1_1.fastq",
-        read2="{sample}.1_2.fastq",
-        index="index"
+        read1="data/{sample}.1_1.fastq",
+        read2="data/{sample}.1_2.fastq",
+        index="ref/index"
     output:
-        "{sample}_1.fq",
-        "{sample}_2.fq"
+        "data/{sample}_1.fq",
+        "data/{sample}_2.fq"
     conda:
         "envs/filter.yaml"
     log:
@@ -63,15 +63,15 @@ rule filter_virus_reads:
     threads: threads
     shell:
         "bwa mem -t {threads} {input.index} {input.read1} {input.read2} | "
-        "samtools view -bS - | "
+        "samtools view -bS -F 4 - | "
         "bamToFastq -i /dev/stdin -fq {output[0]} -fq2 {output[1]}"
 
 rule assembly_virus:
     input:
-        "{sample}_1.fq",
-        "{sample}_2.fq"
+        "data/{sample}_1.fq",
+        "data/{sample}_2.fq"
     output:
-        "{sample}.fa"
+        "montagens/{sample}.fa"
     conda:
         "envs/assembly.yaml"
     log:
