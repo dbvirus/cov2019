@@ -27,6 +27,9 @@ def srr_to_url(srr):
 
     >>> srr_to_url("SRR327703")
     'https://sra-download.st-va.ncbi.nlm.nih.gov/sos2/sra-pub-run-3/SRR327703/SRR327703.3'
+
+    >>> srr_to_url("SRR10059476")
+    'https://sra-download.ncbi.nlm.nih.gov/traces/sra66/SRR/009823/SRR10059476'
     """
 
     srr = srr.upper()
@@ -76,7 +79,7 @@ def srr_to_url(srr):
         sra_file = run["SRAFiles"]["SRAFile"]
 
         url = sra_file["@url"]
-    except KeyError as e:
+    except Exception as e:
         logging.error(f"Failed to acquire link for SRR {srr}")
         logging.error(e)
 
