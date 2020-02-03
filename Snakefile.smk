@@ -14,6 +14,8 @@ with open(samples_file) as fin:
 
 def get_reads(wildcards):
     link=srr_to_url(wildcards.sample)
+    if not link:
+        raise Exception("URL not found!")
     return HTTP.remote(link)
 
 rule all:
@@ -33,6 +35,7 @@ rule fastq_dump:
         "data/{sample}_2.fastq"
     conda:
         "envs/filter.yaml"
+    threads: threads
     log:
         "fastq-dump_{sample}.log"
     shell:
@@ -80,4 +83,4 @@ rule assembly_virus:
         "logs/assembly_{sample}.log"
     threads:threads
     shell:
-        "spades.py -t {threads} -1 {input[0]} -2 {input[1]} --careful  -o {output}"
+        "spades.py -t {threads  } -1 {input[0]} -2 {input[1]} --careful  -o {output}"
