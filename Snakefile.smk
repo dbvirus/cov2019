@@ -39,7 +39,7 @@ rule fastq_dump:
         "envs/filter.yaml"
     threads: threads
     log:
-        "fastq-dump_{sample}.log"
+        "logs/fastq-dump_{sample}.log"
     shell:
         "mv {input.reads} {params.sra};fastq-dump -O data --split-files {params.sra}"
 
@@ -66,7 +66,7 @@ rule filter_virus_reads:
     conda:
         "envs/filter.yaml"
     log:
-        "log/filter_{sample}.log"
+        "logs/filter_{sample}.log"
     threads: threads
     shell:
         "bwa mem -t {threads} {input.index} {input.read1} {input.read2} | "
