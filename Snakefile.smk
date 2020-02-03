@@ -13,7 +13,10 @@ with open(samples_file) as fin:
 links={}
 for sample in samples:
     link = srr_to_url(sample)
-    links[sample]=link
+    if link:
+        links[sample]=link
+    else:
+        samples.remove(sample)
 
 #print(samples)
 
@@ -24,7 +27,7 @@ rule all:
     input:
         #expand("{sample}.fasta", sample=samples)
         #expand("{sample}.1_{pair}.fastq", sample=samples, pair=[1,2])
-        expand("montagens/{sample}.fa", sample=samples)
+        expand("montagens/{sample}", sample=samples)
 
 
 rule fastq_dump:
@@ -70,19 +73,27 @@ rule filter_virus_reads:
     threads: threads
     shell:
         "bwa mem -t {threads} {input.index} {input.read1} {input.read2} | "
-        "samtools view -bS -f 2 - | "
-        "bamToFastq -i /dev/stdin -fq {output[0]} -fq2 {output[1]}"
+        "samtools view -@ {threads} -bS -f 2 - | "
+        "samtools sort -n -@ {threads} - | "
+        "samtools fastq -@ {threads} -1 {output[0]} -2 {output[1]} -0 /dev/null -s /dev/null -n /dev/stdin"
+        #"bamToFastq -i /dev/stdin -fq {output[0]} -fq2 {output[1]}"
 
 rule assembly_virus:
     input:
         "data/{sample}_1.fq",
         "data/{sample}_2.fq"
+    params:
+        "{sample}"
     output:
-        "montagens/{sample}.fa"
+        directory("montagens/{sample}")
     conda:
         "envs/assembly.yaml"
     log:
         "logs/assembly_{sample}.log"
     threads:threads
     shell:
-        "spades.py -t {threads  } -1 {input[0]} -2 {input[1]} --careful  -o {output}"
+        #"spades.py --isolate -t {threads} -1 {input[0]} -2 {input[1]} --careful  -o {output}; rm -f data/{params[0]}*"
+        "if [[ -s {input[0]} ]]; then spades.py -t {threads} -1 {input[0]} -2 {input[1]} --careful  -o {output}; "
+        "else mkdir -p {output}; fi; "
+        "rm -f data/{params[0]}*"
+        
