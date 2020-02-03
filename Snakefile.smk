@@ -10,13 +10,15 @@ samples=list()
 with open(samples_file) as fin:
     samples = [sample.rstrip('\r\n') for sample in fin]
 
+links={}
+for sample in samples:
+    link = srr_to_url(sample)
+    links[sample]=link
+
 #print(samples)
 
 def get_reads(wildcards):
-    link=srr_to_url(wildcards.sample)
-    if not link:
-        raise Exception("URL not found!")
-    return HTTP.remote(link)
+    return HTTP.remote(links[wildcards.sample])
 
 rule all:
     input:
