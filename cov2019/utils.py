@@ -7,7 +7,7 @@ import os
 from dbvirus_searcher.searcher import Searcher
 
 
-def srr_to_url(srr):
+def srr_to_url(srr, halt_on_failure=False):
     """
     Given an SRA SRR number, returns its URL.
 
@@ -15,6 +15,9 @@ def srr_to_url(srr):
 
     Please provide an e-mail address in the NCBI_EMAIL environment variable. It
     is not necessary, but it is a good practice.
+
+    If `halt_on_failure` is set to True, an Exception is thrown if
+    any errors are found while acquiring data.
 
     Example of usage:
     >>> srr_to_url("SRR042301")
@@ -30,6 +33,9 @@ def srr_to_url(srr):
 
     >>> srr_to_url("SRR10059476")
     'https://sra-download.ncbi.nlm.nih.gov/traces/sra66/SRR/009823/SRR10059476'
+
+    >>> srr_to_url("SRR10059477")
+    'https://sra-download.ncbi.nlm.nih.gov/traces/sra35/SRR/009823/SRR10059477'
     """
 
     srr = srr.upper()
@@ -78,10 +84,27 @@ def srr_to_url(srr):
         
         sra_file = run["SRAFiles"]["SRAFile"]
 
+        # A single SRA File may have multiple REAL files
+        # See SRR 10059477 for a current example
+        if isinstance(sra_file, list):
+            # Currently, we care about only for those with semantic_name = run
+            semantic_names = [f["@semantic_name"] for f in sra_file]
+            file_id = semantic_names.index("run")
+
+            if not file_id:
+                logging.warn(f"SRR {srr} has multiple files but no one is valid!")
+                logging.warn("No file has 'semantic_name = run' ")
+                return None
+
+            sra_file = sra_file[file_id]
+
         url = sra_file["@url"]
     except Exception as e:
         logging.error(f"Failed to acquire link for SRR {srr}")
         logging.error(e)
+
+        if halt_on_failure:
+            raise Exception(f"Failed to acquire link for SRR {srr}")
 
         return None
     else:
