@@ -44,7 +44,7 @@ rule fastq_dump:
     log:
         "logs/fastq-dump_{sample}.log"
     shell:
-        "mv {input.reads} {params.sra};fastq-dump -O data --split-files {params.sra}"
+        "mv {input.reads} {params.sra};fastq-dump -O data --split-files {params.sra}; rm -Rf {params.sra}"
 
 rule build_index:
     input:
@@ -75,7 +75,8 @@ rule filter_virus_reads:
         "bwa mem -t {threads} {input.index} {input.read1} {input.read2} | "
         "samtools view -@ {threads} -bS -f 2 - | "
         "samtools sort -n -@ {threads} - | "
-        "samtools fastq -@ {threads} -1 {output[0]} -2 {output[1]} -0 /dev/null -s /dev/null -n /dev/stdin"
+        "samtools fastq -@ {threads} -1 {output[0]} -2 {output[1]} -0 /dev/null -s /dev/null -n /dev/stdin; "
+        "rm -Rf {input.read1} {input.read2}"
         #"bamToFastq -i /dev/stdin -fq {output[0]} -fq2 {output[1]}"
 
 rule assembly_virus:
