@@ -7,7 +7,7 @@ dbvirus-cacher==0.0.2
 dbvirus-searcher==0.1.1
 fire==0.2.1
 mongoengine==0.18.2
-numpy==1.18.1
+numpy==1.22.0
 pathspec==0.7.0
 pymongo==3.10.1
 pytz==2019.3
