@@ -1,7 +1,7 @@
 appdirs==1.4.3
 attrs==19.3.0
 biopython==1.76
-black==19.10b0
+black==24.3.0
 Click==7.0
 dbvirus-cacher==0.0.2
 dbvirus-searcher==0.1.1
